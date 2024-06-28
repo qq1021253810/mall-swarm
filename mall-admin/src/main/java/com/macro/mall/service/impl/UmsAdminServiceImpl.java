@@ -97,7 +97,7 @@ public class UmsAdminServiceImpl implements UmsAdminService {
         params.put("grant_type","password");
         params.put("username",username);
         params.put("password",password);
-        CommonResult restResult = authService.getAccessToken(params);
+        CommonResult restResult = authService.postAccessToken(params);
         if(ResultCode.SUCCESS.getCode()==restResult.getCode()&&restResult.getData()!=null){
 //            updateLoginTimeByUsername(username);
             insertLoginLog(username);
