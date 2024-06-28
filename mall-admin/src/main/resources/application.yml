@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8083
 spring:
   mvc:
     pathmatch:
@@ -25,7 +25,7 @@ spring:
     timeout: 3000ms # 连接超时时间（毫秒）
   rabbitmq: #rabbitmq相关配置
     host: 192.168.200.128
-    port: 15672
+    port: 5672
     #virtual-host: /mall
     username: guest
     password: guest
