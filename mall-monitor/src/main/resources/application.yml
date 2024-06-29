@@ -1,6 +1,8 @@
 server:
   port: 8101
 spring:
+  application:
+    name: mall-monitor
   security: # 配置登录用户名和密码
     user:
       name: macro
@@ -9,4 +11,10 @@ spring:
     admin:
       discovery:
         ignored-services: ${spring.application.name}
-
+  cloud:
+    nacos:
+      discovery:
+        server-addr: http://192.168.200.128:8848
+      config:
+        server-addr: http://192.168.200.128:8848
+        file-extension: yaml
