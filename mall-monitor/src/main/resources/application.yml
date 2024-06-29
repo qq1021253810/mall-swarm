@@ -1,6 +1,6 @@
+server:
+  port: 8101
 spring:
-  application:
-    name: mall-monitor
   security: # 配置登录用户名和密码
     user:
       name: macro
@@ -9,5 +9,4 @@ spring:
     admin:
       discovery:
         ignored-services: ${spring.application.name}
-server:
-  port: 8101
+
