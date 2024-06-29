@@ -1,0 +1,167 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: mysql57
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456 #设置root帐号密码
+    ports:
+      - 3306:3306
+    volumes:
+      - /my/local/mysql/data:/usr/env/mysql/data #数据文件挂载
+      - /my/local/mysql/conf:/usr/env/mysql/conf #配置文件挂载
+      - /my/local/mysql/log:/usr/env/mysql/log #日志文件挂载
+    networks:
+      - my-network
+  redis:
+    image: redis
+    container_name: redis
+    #command: redis-server --appendonly yes #AOF持久化
+    restart: always
+    volumes:
+      - /my/local/redis/data:/usr/env/redis/data #数据文件挂载
+      - /my/local/redis/conf:/usr/env/redis/conf #配置文件挂载
+      - /my/local/redis/log:/usr/env/redis/log #日志文件挂载
+    ports:
+      - 6379:6379
+    networks:
+      - my-network
+  nginx:
+    image: nginx:1.22
+    container_name: nginx
+    restart: always
+    volumes:
+      - /my/local/nginx/data:/usr/env/nginx/data #数据文件挂载
+      - /my/local/nginx/conf:/usr/env/nginx/conf #配置文件挂载
+      - /my/local/nginx/log:/usr/env/nginx/log #日志文件挂载
+    ports:
+      - 80:80
+    networks:
+      - my-network
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    restart: always
+    volumes:
+      - /my/local/rabbitmq/data:/usr/env/rabbitmq/data #数据文件挂载
+      - /my/local/rabbitmq/conf:/usr/env/rabbitmq/conf #配置文件挂载
+      - /my/local/rabbitmq/log:/usr/env/rabbitmq/log #日志文件挂载
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - my-network
+  elasticsearch:
+    image: elasticsearch-with-ik:7.17.3
+    container_name: elasticsearch
+    restart: always
+    user: root
+    environment:
+      - "cluster.name=elasticsearch" #设置集群名称为elasticsearch
+      - "discovery.type=single-node" #以单一节点模式启动
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1024m" #设置使用jvm内存大小
+    volumes:
+      - /my/local/elasticsearch/plugins:/usr/env/elasticsearch/plugins #插件文件挂载
+      - /my/local/elasticsearch/data:/usr/env/elasticsearch/data #数据文件挂载
+      - /my/local/elasticsearch/conf:/usr/env/elasticsearch/conf #配置文件挂载
+      - /my/local/elasticsearch/log:/usr/env/elasticsearch/log #日志文件挂载
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - my-network
+  logstash:
+    image: logstash:7.17.3
+    container_name: logstash
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - /my/local/logstash/data:/usr/env/logstash/data #数据文件挂载
+      - /my/local/logstash/conf:/usr/env/logstash/conf #配置文件挂载
+      - /my/local/logstash/log:/usr/env/logstash/log #日志文件挂载
+    depends_on:
+      - elasticsearch #kibana在elasticsearch启动之后再启动
+    #    links:
+    #      - elasticsearch:es #可以用es这个域名访问elasticsearch服务
+    ports:
+      - 4560:4560
+      - 4561:4561
+      - 4562:4562
+      - 4563:4563
+    networks:
+      - my-network
+  kibana:
+    image: kibana:7.17.3
+    container_name: kibana
+    restart: always
+    #    links:
+    #      - elasticsearch:es #可以用es这个域名访问elasticsearch服务
+    depends_on:
+      - elasticsearch #kibana在elasticsearch启动之后再启动
+    environment:
+      - "elasticsearch.hosts=http://elasticsearch:9200" #设置访问elasticsearch的地址
+    ports:
+      - 5601:5601
+    networks:
+      - my-network
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: always
+    volumes:
+      - /my/local/mongo/data:/usr/env/mongo/data #数据文件挂载
+      - /my/local/mongo/conf:/usr/env/mongo/conf #配置文件挂载
+      - /my/local/mongo/log:/usr/env/mongo/log #日志文件挂载
+    ports:
+      - 27017:27017
+    networks:
+      - my-network
+  nacos-registry:
+    image: nacos/nacos-server:v2.1.0
+    container_name: nacos-registry
+    restart: always
+    environment:
+      - "MODE=standalone"
+    ports:
+      - 8848:8848
+    networks:
+      - my-network
+  minio:
+    image: bitnami/minio:latest
+    container_name: minio
+    restart: always
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    ports:
+      - "9001:9000"
+    volumes:
+      - /my/local/minio/data:/usr/env/minio/data #数据文件挂载
+      - /my/local/minio/conf:/usr/env/minio/conf #配置文件挂载
+      - /my/local/minio/log:/usr/env/minio/log #日志文件挂载
+    networks:
+      - my-network
+  minio-client:
+    image: bitnami/minio-client:latest
+    container_name: minio-client
+    restart: always
+    depends_on:
+      - minio
+    environment:
+      - MINIO_SERVER_URL=http://minio:9000
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: >
+      /bin/sh -c "
+      sleep 20;
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/mall;
+      mc policy set public myminio/mall"
+    networks:
+      - my-network
+networks:
+  my-network:
+    driver: bridge
